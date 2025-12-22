@@ -73,9 +73,12 @@ fn hanConn(conn: net.Server.Connection) !void {
     while (try fi_I.takeDelimiter('\n')) |li| {
         li_N += 1;
         try req.server.out.print("{s}\n", .{li});
+        //flush line to client
+        try req.server.out.flush();
     }
 
-    //flush buffer to client
+    //just to be sure that the buffer
+    //  was flushed
     try req.server.out.flush();
 }
 
