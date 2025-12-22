@@ -9,7 +9,6 @@ const http = std.http;
 const heap = std.heap;
 const posix = std.posix;
 const posys = posix.system;
-const alloc = heap.page_allocator;
 
 var stdout_buf: [1024]u8 = undefined;
 var stdout_wr = fs.File.stdout().writer(&stdout_buf);
@@ -30,6 +29,10 @@ pub fn main() !void {
 
 fn hanConn(conn: net.Server.Connection) !void {
     defer conn.stream.close();
+    
+    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
 
     const remAddr = conn.address;
     const ip_u32:u32 = remAddr.in.sa.addr;
@@ -43,7 +46,7 @@ fn hanConn(conn: net.Server.Connection) !void {
 
     const timeStamp = cTime.time(null);
     const locTime = cTime.localtime(&timeStamp);
-    const format = "%a %d %b %Y %I:%M:%S %p %Z";
+    const format = "%a, %d %b %Y %H:%M:%S GMT";
     var time_buf: [40]u8 = undefined;
     const time_len = cTime.strftime(&time_buf, time_buf.len, format, locTime);
     const curTime = time_buf[0..time_len];
@@ -65,15 +68,29 @@ fn hanConn(conn: net.Server.Connection) !void {
     var li_N:usize = 0;
     const fi_I = &fi_R.interface;
 
+    const dateHeader = try fmt.allocPrint(alloc, "date: {s}", .{curTime});
+
     //write headers
-    try req.server.out.print("HTTP/1.1 200 OK\r\n", .{});
-    try req.server.out.print("Content-Type: text/html\r\n", .{});
-    try req.server.out.print("\r\n", .{});
+    const headers = [_][]const u8{
+        "HTTP/1.1 200 OK",
+        "Content-Type: text/html",
+        "x-content-type-options: nosniff",
+        "server: homebrew zig http server",
+        dateHeader,
+        ""
+    };for(headers) |header| {
+        try req.server.out.print("{s}\r\n", .{header});
+        try req.server.out.flush();
+    } alloc.free(dateHeader);
+
+    switch(req.head.method) {
+        .GET => no_op(),
+        else => return,
+    }
 
     while (try fi_I.takeDelimiter('\n')) |li| {
         li_N += 1;
         try req.server.out.print("{s}\n", .{li});
-        //flush line to client
         try req.server.out.flush();
     }
 
@@ -89,3 +106,5 @@ const log = struct {
         nosuspend stdout.flush() catch return;
     }
 };
+
+fn no_op() void {}
