@@ -61,13 +61,6 @@ fn hanConn(conn: net.Server.Connection) !void {
     var http_server = http.Server.init(reader.interface(), &writer.interface);
     var req = try http_server.receiveHead();
     
-    var fi = try fs.cwd().openFile("foo.html", .{});
-    defer fi.close();
-    var fi_buf: [1024]u8 = undefined;
-    var fi_R = fi.reader(&fi_buf);
-    var li_N:usize = 0;
-    const fi_I = &fi_R.interface;
-
     const dateHeader = try fmt.allocPrint(alloc, "date: {s}", .{curTime});
 
     //write headers
@@ -87,6 +80,13 @@ fn hanConn(conn: net.Server.Connection) !void {
         .GET => {},
         else => return,
     }
+    
+    var fi = try fs.cwd().openFile("foo.html", .{});
+    defer fi.close();
+    var fi_buf: [1024]u8 = undefined;
+    var fi_R = fi.reader(&fi_buf);
+    var li_N:usize = 0;
+    const fi_I = &fi_R.interface;
 
     while (try fi_I.takeDelimiter('\n')) |li| {
         li_N += 1;
