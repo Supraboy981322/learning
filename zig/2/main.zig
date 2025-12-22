@@ -84,7 +84,7 @@ fn hanConn(conn: net.Server.Connection) !void {
     } alloc.free(dateHeader);
 
     switch(req.head.method) {
-        .GET => no_op(),
+        .GET => {},
         else => return,
     }
 
@@ -106,5 +106,3 @@ const log = struct {
         nosuspend stdout.flush() catch return;
     }
 };
-
-fn no_op() void {}
