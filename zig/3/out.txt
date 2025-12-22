@@ -1,19 +1,45 @@
 [
   {
-    "device": "/dev/disk/by-uuid/79520927-6e83-42c8-8920-4cda8984ea67",
-    "mount": "/"
+    "name": "sda",
+    "#blocks": "468851544",
+    "minor": "0",
+    "major": "8"
   },
   {
-    "device": "/dev/disk/by-uuid/79520927-6e83-42c8-8920-4cda8984ea67",
-    "mount": "/nix/store"
+    "name": "sdb",
+    "#blocks": "7814026584",
+    "minor": "16",
+    "major": "8"
   },
   {
-    "device": "/dev/nvme0n1p1",
-    "mount": "/boot"
+    "name": "sdc",
+    "#blocks": "7814026584",
+    "minor": "32",
+    "major": "8"
   },
   {
-    "device": "super@100.73.238.66:/home/super",
-    "mount": "/home/super/machines/dev"
+    "name": "sdd",
+    "#blocks": "976762584",
+    "minor": "48",
+    "major": "8"
+  },
+  {
+    "name": "sde",
+    "#blocks": "947460024",
+    "minor": "64",
+    "major": "8"
+  },
+  {
+    "name": "sdf",
+    "#blocks": "488386584",
+    "minor": "80",
+    "major": "8"
+  },
+  {
+    "name": "sdg",
+    "#blocks": "488386584",
+    "minor": "96",
+    "major": "8"
   }
 ]
 
