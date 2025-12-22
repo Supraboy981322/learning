@@ -88,7 +88,8 @@ pub fn main() !void {
         try out.appendSlice(alloc, "\n  },\n");
     }
 
-    //remove the comma and newline last object closing brace
+    //remove the comma and newline
+    // from last object's closing brace
     for (0..2) |_| _ = out.pop();
 
     //close json array
