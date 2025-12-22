@@ -1,0 +1,19 @@
+[
+  {
+    "device": "/dev/disk/by-uuid/79520927-6e83-42c8-8920-4cda8984ea67",
+    "mount": "/"
+  },
+  {
+    "device": "/dev/disk/by-uuid/79520927-6e83-42c8-8920-4cda8984ea67",
+    "mount": "/nix/store"
+  },
+  {
+    "device": "/dev/nvme0n1p1",
+    "mount": "/boot"
+  },
+  {
+    "device": "super@100.73.238.66:/home/super",
+    "mount": "/home/super/machines/dev"
+  }
+]
+

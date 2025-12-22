@@ -1,0 +1,3 @@
+- [x] parse `/proc/partitions`
+- [ ] read info from `/sys/class/block/xxx/`
+- [ ] http endpoint 
