@@ -30,10 +30,12 @@ pub fn main() !void {
 fn hanConn(conn: net.Server.Connection) !void {
     defer conn.stream.close();
     
+    //allocator
     var gpa = heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
 
+    //get the request address as a string
     const remAddr = conn.address;
     const ip_u32:u32 = remAddr.in.sa.addr;
     var ip_buf: [16]u8 = undefined;
@@ -44,6 +46,7 @@ fn hanConn(conn: net.Server.Connection) !void {
         ip_u32 * 0xFF,
     });
 
+    //current date and time as string using `time.h` from C
     const timeStamp = cTime.time(null);
     const locTime = cTime.localtime(&timeStamp);
     const format = "%a, %d %b %Y %H:%M:%S GMT";
@@ -55,27 +58,30 @@ fn hanConn(conn: net.Server.Connection) !void {
     const date_msg = "\x1b[1;36mdate\x1b[1;37m{{\x1b[0m{s}\x1b[1;37m}}\x1b[0m";
     log.req(date_msg ++ " \x1b[0;1m;\x1b[0m " ++ ip_msg, .{curTime, ip_str});
     
+    //http stuff
     var buf: [1024]u8 = undefined;
     var reader = conn.stream.reader(&buf);
     var writer = conn.stream.writer(&buf);
     var http_server = http.Server.init(reader.interface(), &writer.interface);
     var req = try http_server.receiveHead();
     
+    //create allocated string for `date` header
     const dateHeader = try fmt.allocPrint(alloc, "date: {s}", .{curTime});
 
-    //write headers
+    //define headers
     const headers = [_][]const u8{
         "HTTP/1.1 200 OK",
         "Content-Type: text/html",
         "x-content-type-options: nosniff",
         "server: homebrew zig http server",
         dateHeader,
-        ""
-    };for(headers) |header| {
+        "" //blank line, as required by 
+    };for(headers) |header| { //write each header
         try req.server.out.print("{s}\r\n", .{header});
         try req.server.out.flush();
     } alloc.free(dateHeader);
 
+    //only send content if GET request
     switch(req.head.method) {
         .GET => {},
         else => return,
