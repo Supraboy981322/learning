@@ -29,6 +29,7 @@ func (p *tokLexr) lexTok() []Tok {
 	p.start = p.pos
 	p.cur = string(p.src[p.pos])
 	switch p.cur {
+	 case "_":  p.addTok(NOP)
 	 case ")":  p.addTok(RIGHT_PAREN)
 	 case "{":  p.addTok(LEFT_BRACE)
 	 case "}":  p.addTok(RIGHT_BRACE)
@@ -59,10 +60,7 @@ func (p *tokLexr) lexTok() []Tok {
 		if p.match("=") { p.addTok(GREATER_EQUAL) } else { p.addTok(GREATER) }
 	 case "(":
 		if p.match("*") {
-			for {
-				if p.match("*") && p.match(")") { return p.lexTok() }
-				if !p.eof() { if p.src[p.pos] == '\n' { p.line++ } ; p.pos++ }
-			}
+			_ = p.multi_com(0)
 		} else { p.addTok(LEFT_PAREN) }
 	 default:
 		if !p.isDig() && !p.isAlpha() {
@@ -197,4 +195,19 @@ func (p *tokLexr) keyword(str string) TokType {
 	for k, v := range words { 
 		if str == k { return v }
 	} ; return INVALID
+}
+
+func (p *tokLexr) multi_com(numDeep int) int {
+	for {
+		if p.match("*") && p.match(")") { break }
+		if p.match("(") && p.match("*") {
+			numDeep++ ; numDeep = p.multi_com(numDeep)
+		}
+		if numDeep == -1 { fmt.Println("numDeep == -1") }
+		if !p.eof() {
+			if p.src[p.pos] == '\n' { p.line++ }
+			p.pos++
+		} else { break }
+	}
+	return numDeep-1
 }
