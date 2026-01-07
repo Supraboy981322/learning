@@ -157,7 +157,11 @@ func (p *tokLexr) ident() {
 		} else { break }
 	}
 
-	p.addTok(IDENT)
+	txt := p.src[p.start:p.pos]
+	typ := p.keyword(txt) 
+	if typ == INVALID { typ = IDENT }
+
+	p.addTok(typ)
 }
 
 func (p *tokLexr) isAlpha() bool {
@@ -173,11 +177,11 @@ func (p *tokLexr) isAlphaNumeric() bool {
 	return p.isAlpha() || p.isDig()
 }
 
-func (p *tokLexr) keyword(str string) string {
+func (p *tokLexr) keyword(str string) TokType {
 	words := map[string]TokType {
 		"class": CLASS,
 		"false": FALSE,
-		"fo": FOR,
+		"for": FOR,
 		"fn": FN,
 		"nil": NIL,
 		"print": PRINT,
@@ -189,4 +193,8 @@ func (p *tokLexr) keyword(str string) string {
 		"var": VAR,
 		"while": WHILE,
 	}
+
+	for k, v := range words { 
+		if str == k { return v }
+	} ; return INVALID
 }

@@ -46,6 +46,7 @@ func (t TokType) String() string {
 	 case WHILE:        return "WHILE" 
 	 case ESC:          return "ESC"
 	 case EOF:          return "EOF" 
+	 case INVALID:      return "INVALID"
 	}
 	return "unknown token"
 }

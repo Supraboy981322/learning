@@ -54,7 +54,8 @@ const (
 	TRUE //`true`
 	VAR  //`var`
 	WHILE //`while`
-	ESC //arbitrarily eccape blocks
+	ESC //`esc` (arbitrarily eccape blocks)
+	INVALID //used internally
   EOF
 )
 
