@@ -46,7 +46,7 @@ const (
 	NOP //no-op (eg: `_ = funcWithReturn()` or `(a > 0) ? { _ } : { print "a is smol" }`)
   EOF
 
-	IF TokType = TERN
+	IF TokType = TERN //in case it wasn't clear 
 )
 
 func (t *Tok) ToString() string {
