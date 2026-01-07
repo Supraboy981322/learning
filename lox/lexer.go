@@ -1,15 +1,16 @@
 package main
 
-import ("fmt";"os")
+import ("os";"strings")
 
 type (
-	tokLexr struct {
+	TokLexr struct {
 		start int
 		line int
 		src string
 		pos int
 		cur string
 		toks []Tok
+		srcLis []string
 	}
 )
 
@@ -17,14 +18,16 @@ var (
 )
 
 func lexToks(src string) []Tok {
-	p := tokLexr{
+	srcLis := strings.Split(src, "\n")
+	p := TokLexr{
 		src: src,
 		toks: []Tok{},
+		srcLis: srcLis,
 	}
 	return p.lexTok()
 }
 
-func (p *tokLexr) lexTok() []Tok {
+func (p *TokLexr) lexTok() []Tok {
 	if p.eof() { return p.toks }
 	p.start = p.pos
 	p.cur = string(p.src[p.pos])
@@ -43,28 +46,29 @@ func (p *tokLexr) lexTok() []Tok {
 	 case "|":  p.addTok(OR)
 	 case "/":  p.addTok(SLASH)
 	 case "*":  p.addTok(STAR)
+	 case "-": p.addTok(MINUS)
 	 case "\"": p.string()
 	 case "\n": p.line++
 	 case " ", "\r", "\t": //do nothing
-	 case "-":
-		if p.match("-") { 
+	 case "~": //the equivalent Zig code looks much better for this one
+		if p.match("~") { 
 			for { if p.match("\n") { break } ; if !p.eof() { p.pos++ } }
-		} else { p.addTok(MINUS) }
-	 case "!":
+		} else { eror(p, "unexpected char: "+p.cur) }
+	 case "!": //insert rant about not having a ternary here
 		if p.match("=") { p.addTok(BANG_EQUAL) } else { p.addTok(BANG) }
-	 case "=":
+	 case "=": //insert rant about not having a ternary here
 		if p.match("=") { p.addTok(EQUAL_EQUAL) } else { p.addTok(EQUAL) }
-	 case "<":
+	 case "<": //insert rant about not having a ternary here
 		if p.match("=") { p.addTok(LESS_EQUAL) } else { p.addTok(LESS) }
-	 case ">":
+	 case ">": //insert rant about not having a ternary here
 		if p.match("=") { p.addTok(GREATER_EQUAL) } else { p.addTok(GREATER) }
-	 case "(":
+	 case "(": 
 		if p.match("*") {
-			_ = p.multi_com(0)
+			if p.multi_com(0) > 0 { eror(p, "multi-line never closed, reached EOF") } 
 		} else { p.addTok(LEFT_PAREN) }
 	 default:
 		if !p.isDig() && !p.isAlpha() {
-			eror(p.line, fmt.Sprintf("unexpected char: %s", p.cur))
+			eror(p, "unexpected char: "+p.cur)
 		} else if p.isAlpha() { p.ident()
 		} else { p.num() }
 	}
@@ -72,9 +76,9 @@ func (p *tokLexr) lexTok() []Tok {
 	return p.lexTok()
 }
 
-func (p *tokLexr) eof() bool { return p.pos >= len(p.src) }
+func (p *TokLexr) eof() bool { return p.pos >= len(p.src) }
 
-func (p *tokLexr) addTok(t TokType) {
+func (p *TokLexr) addTok(t TokType) {
 	txt := p.src[p.start:p.pos]
 	p.toks = append(p.toks, Tok{
 		typ: t,
@@ -84,7 +88,7 @@ func (p *tokLexr) addTok(t TokType) {
 	})
 }
 
-func (p *tokLexr) match(c string) bool {
+func (p *TokLexr) match(c string) bool {
 	if p.eof() || p.pos+1 >= len(p.src) { return false }
 	if string(p.src[p.pos+1]) != c { return false }
 
@@ -92,12 +96,12 @@ func (p *tokLexr) match(c string) bool {
 	return true
 }
 
-func (p *tokLexr) peek() string {
+func (p *TokLexr) peek() string {
 	if p.eof() || p.pos+1 >= len(p.src) { return "" }
 	return string(p.src[p.pos+1])
 }
 
-func (p *tokLexr) string() {
+func (p *TokLexr) string() {
 	for {
 		if p.eof() || p.peek() == "\"" { break }
 		if p.peek() == "\n" { p.line++ }
@@ -108,7 +112,7 @@ func (p *tokLexr) string() {
 		p.pos++
 	}
 	if p.eof() {
-		eror(p.line, "unterminated string")
+		eror(p, "unterminated string")
 		return
 	}
 	p.start++ //removes begining token
@@ -116,14 +120,14 @@ func (p *tokLexr) string() {
 	p.addTok(STRING)
 }
 
-func (p *tokLexr) isDig() bool {
+func (p *TokLexr) isDig() bool {
 	switch p.cur {
 	 case "0","9","8","7","6","5","4","3","2","1": return true
 	}
 	return false
 }
 
-func (p *tokLexr) num() {
+func (p *TokLexr) num() {
 	for {
 		if !p.isDig() || p.eof() { break } else {
 			p.pos++ ; if p.eof() { break }
@@ -147,7 +151,7 @@ func (p *tokLexr) num() {
 	p.addTok(NUMBER)
 }
 
-func (p *tokLexr) ident() {
+func (p *TokLexr) ident() {
 	for {
 		if p.isAlphaNumeric() {
 			p.pos++ ; if p.eof() { break }
@@ -162,7 +166,7 @@ func (p *tokLexr) ident() {
 	p.addTok(typ)
 }
 
-func (p *tokLexr) isAlpha() bool {
+func (p *TokLexr) isAlpha() bool {
 	var c rune //since one char, just get first rune 
 	for _, r := range p.cur { c = r ; break } 
 
@@ -171,11 +175,11 @@ func (p *tokLexr) isAlpha() bool {
 	       c == '_'
 }
 
-func (p *tokLexr) isAlphaNumeric() bool {
+func (p *TokLexr) isAlphaNumeric() bool {
 	return p.isAlpha() || p.isDig()
 }
 
-func (p *tokLexr) keyword(str string) TokType {
+func (p *TokLexr) keyword(str string) TokType {
 	words := map[string]TokType {
 		"class": CLASS,
 		"false": FALSE,
@@ -197,19 +201,19 @@ func (p *tokLexr) keyword(str string) TokType {
 	} ; return INVALID
 }
 
-func (p *tokLexr) multi_com(numDeep int) int {
+func (p *TokLexr) multi_com(numDeep int) int {
 	for {
 		if p.match("*") && p.match(")") { break }
 		if p.match("(") && p.match("*") {
 			numDeep++ ; numDeep = p.multi_com(numDeep)
 		}
 		if numDeep == -1 {
-			fmt.Fprintln(os.Stderr, "numDeep == -1") ; os.Exit(1)
+			eror(p, "multi_com(): numDeep == -1") ; os.Exit(1)
 		}
 		if !p.eof() {
 			if p.src[p.pos] == '\n' { p.line++ }
 			p.pos++
-		} else { break }
+		} else { return numDeep+1 }
 	}
 	return numDeep-1
 }

@@ -1,1 +1,16 @@
-print "foo";
+(* foo
+  bar (*
+
+  baz
+print
+*)
+  *)
+
+var a = 0;
+(a > 0) ? {
+  print "foo";
+} : {
+  print "bar";
+  ~~ single line comment
+}
+

@@ -18,8 +18,7 @@ func runPrompt() {
 	for {
 		p := "\033[38;2;2;240;164m?\033[0m"
 		if hadErr { p = "\033[38;2;255;117;127m!\033[0m" }
-//		fmt.Fprintf(os.Stdout, "\033[38;2;255;215;95m(\033[0m%s\033[38;2;255;215;95m):\033[0m ", p)
-		fmt.Fprintf(os.Stdout, "(%s): ", p)
+		fmt.Fprintf(os.Stdout, "\033[38;2;255;215;95m(\033[0m%s\033[38;2;255;215;95m):\033[0m ", p)
 		hadErr = false
 
 
@@ -44,5 +43,5 @@ func run(src string) {
 	})*/
 
 	toks := lexToks(src)
-	for _, t := range toks { fmt.Print(t.literal+"\n") }
+	for _, t := range toks { fmt.Print(t.typ.String()+"\n") }
 }

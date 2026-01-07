@@ -56,6 +56,7 @@ const (
 	WHILE //`while`
 	ESC //`esc` (arbitrarily eccape blocks)
 	INVALID //used internally
+	NOP //no-op (eg: `_ = funcWithReturn()` or `(a > 0) ? { _ } : { print "a is smol" }`)
   EOF
 )
 
