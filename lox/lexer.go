@@ -36,9 +36,10 @@ func (p *tokLexr) lexTok() []Tok {
 	 case ".":  p.addTok(DOT)
 	 case "+":  p.addTok(PLUS)
 	 case ";":  p.addTok(SEMICOLON)
-   case ":":  p.addTok(COLON)
+   case ":":  p.addTok(ELSE)
 	 case "?":  p.addTok(TERN)
-	case "&":  p.addTok(AND)
+	 case "&":  p.addTok(AND)
+	 case "|":  p.addTok(OR)
 	 case "/":  p.addTok(SLASH)
 	 case "*":  p.addTok(STAR)
 	 case "\"": p.string()
@@ -170,4 +171,22 @@ func (p *tokLexr) isAlpha() bool {
 
 func (p *tokLexr) isAlphaNumeric() bool {
 	return p.isAlpha() || p.isDig()
+}
+
+func (p *tokLexr) keyword(str string) string {
+	words := map[string]TokType {
+		"class": CLASS,
+		"false": FALSE,
+		"fo": FOR,
+		"fn": FN,
+		"nil": NIL,
+		"print": PRINT,
+		"return": RETURN,
+		"esc": ESC,
+		"super": SUPER,
+		"this": THIS,
+		"true": TRUE,
+		"var": VAR,
+		"while": WHILE,
+	}
 }

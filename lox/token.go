@@ -44,7 +44,6 @@ func (t TokType) String() string {
 	 case TRUE:         return "TRUE" 
 	 case VAR:          return "VAR" 
 	 case WHILE:        return "WHILE" 
-	 case COLON:        return "COLON"
 	 case ESC:          return "ESC"
 	 case EOF:          return "EOF" 
 	}
