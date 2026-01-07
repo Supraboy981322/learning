@@ -12,37 +12,33 @@ var stdout_wr = fs.File.stdout().writer(&stdout_buf);
 const stdout = &stdout_wr.interface;
 
 pub fn main() !void {
-    //temporary, will replace with reading file into memory
-    const in = @embedFile("in.txt");
-
-    //split file into array of lines 
-    var liS = mem.splitAny(u8, in, "\r\n");
-
     //create an allocator
     var gpa = heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
-    
+
+    var fi = try fs.openFileAbsolute("/proc/partitions", .{ .mode = .read_only });
+    defer fi.close();
+    var fi_buf: [1024]u8 = undefined;
+    var fi_R = fi.reader(&fi_buf);
+
     //create string array to hold json
     var out = std.ArrayList(u8).empty;
     defer out.deinit(alloc);
-
+    
     //open json array
     try out.appendSlice(alloc, "[\n");
 
-    //iterate over each line
-    var liN: usize = 0;
 
-    //skip first two lines
-    //  (table head and empty line)
-    for (0..2) |_| _ = liS.next();
+    var li_N:usize = 0;
+    const fi_I = &fi_R.interface;
+    while (try fi_I.takeDelimiter('\n')) |li| {
+        li_N += 1;
 
-    while (liS.next()) |li| {
-        liN += 1; //moves to next line (?), not sure how it knows that's what this's for
-
-        //if empty line (likely EOF), end loop
-        if (li.len == 0) break;
-
+        //skip first two lines
+        //  (table head and empty line)
+        if (li_N <= 2) continue;
+        
         //open a new opject
         try out.appendSlice(alloc, "  {\n");
 
@@ -51,13 +47,11 @@ pub fn main() !void {
 
         var i:i8 = 0;
         var used:bool = false;
+        var previous: [1024]u8 = undefined;
         while (fields.next()) |itm| {
             //skip item if empty
             //  (mem.splitScalar doesn't count for repeated delimiters)
             if (itm.len == 0) continue;
-
-            //stop if name is longer than 3 chars
-            if (i == 0 and itm.len > 3) break;
 
             //what the current field is
             const w = switch(i) {
@@ -68,6 +62,15 @@ pub fn main() !void {
                 else => "unknown field",
             };
 
+            if (i == 0) {
+                if (mem.containsAtLeast(u8, &previous, 1, itm)) {
+                    continue;
+                } else {
+                    previous = undefined;
+                    mem.copyForwards(u8, previous[0..itm.len], itm);
+                }
+            }
+
             //create line 
             const nLi = try fmt.allocPrint(alloc, "    \"{s}\": \"{s}\",\n", .{w, itm});
             try out.appendSlice(alloc, nLi); //add to slice
@@ -76,7 +79,8 @@ pub fn main() !void {
             used = true;
             i += 1;
         }
-
+       
+        //cleanup if unused
         if (used) {
             //remove comma from last item in object
             for (0..2) |_| _ = out.pop();
