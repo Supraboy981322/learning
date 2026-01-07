@@ -1,0 +1,41 @@
+
+ ╭ 07:25pm  dontnix@super --> ~/machines/dev/learning/java/1
+ ╰$ distrobox enter dev
+Starting container...                            [ OK ]
+Installing basic packages...                     [ OK ]
+Setting up devpts mounts...                      [ OK ]
+Setting up read-only mounts...                   [ OK ]
+Setting up read-write mounts...                  [ OK ]
+Setting up host's sockets integration...         [ OK ]
+Integrating host's themes, icons, fonts...       [ OK ]
+Setting up distrobox profile...                  [ OK ]
+Setting up sudo...                               [ OK ]
+Setting up user's group list...                  [ OK ]
+
+Container Setup Complete!
+
+ ╭ 01:25am  zane-desktop-pc@super --> ~/machines/dev/learning/java/1
+ ╰$ echo "${JAVA_HOME}"
+/nix/store/dx37s8sjng0jpizrpr70aqk2bh87iczw-openjdk-23.0.2+7/lib/openjdk
+
+ ╭ 01:25am  zane-desktop-pc@super --> ~/machines/dev/learning/java/1
+ ╰$ z';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
