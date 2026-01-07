@@ -1,6 +1,6 @@
 package main
 
-import ("fmt")
+import ("fmt";"os")
 
 type (
 	tokLexr struct {
@@ -203,7 +203,9 @@ func (p *tokLexr) multi_com(numDeep int) int {
 		if p.match("(") && p.match("*") {
 			numDeep++ ; numDeep = p.multi_com(numDeep)
 		}
-		if numDeep == -1 { fmt.Println("numDeep == -1") }
+		if numDeep == -1 {
+			fmt.Fprintln(os.Stderr, "numDeep == -1") ; os.Exit(1)
+		}
 		if !p.eof() {
 			if p.src[p.pos] == '\n' { p.line++ }
 			p.pos++
