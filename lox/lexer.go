@@ -135,7 +135,7 @@ func (p *TokLexr) num() {
 		}
 	}
 
-	next := p.peek() ; p.pos++
+	next := p.peek()
 	p.cur = string(p.src[p.pos])
 	if next == "." && p.isDig() {
 		if p.eof() { return }
@@ -193,6 +193,7 @@ func (p *TokLexr) keyword(str string) TokType {
 		"this": THIS,
 		"true": TRUE,
 		"var": VAR,
+		"close": CLOSE,
 		"while": WHILE,
 	}
 

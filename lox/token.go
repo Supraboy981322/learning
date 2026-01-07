@@ -1,5 +1,54 @@
 package main
 
+const (
+	// Single-character tokens.
+  LEFT_PAREN TokType = iota //`(`
+	RIGHT_PAREN //`)`
+	LEFT_BRACE  //`{`
+	RIGHT_BRACE //`}`
+  COMMA //`,`
+	DOT   //`.`
+	MINUS //`-`
+	PLUS  //`+`
+	SEMICOLON //`;`
+	SLASH //`/`
+	STAR  //`*`
+  BANG  //`!`
+	BANG_EQUAL //`!=`
+  EQUAL //`=`
+	EQUAL_EQUAL //`==`
+  GREATER //`>`
+	GREATER_EQUAL //`>=`
+  LESS  //`<`
+	LESS_EQUAL //`<=`
+  IDENT //identifier
+	STRING //`"..."` or `'...'`
+	NUMBER //`1` or `2` or `3` or `4` or `5` or `6` or `7` or `8` or `9` or `0`
+  AND   //`&`
+	CLASS //`class`
+	ELSE  //`:`
+	FALSE //`false`
+	FN  //`fn`
+	FOR //`for`
+	TERN //`?` if this affends you, GOOD (I can't understand you... creatures)
+	NIL //`nil`
+	OR  //`|`
+  PRINT //`print`
+	RETURN //`return`
+	SUPER //`super`
+	THIS //`this`
+	TRUE //`true`
+	VAR  //`var`
+	WHILE //`while`
+	ESC //`esc` (arbitrarily eccape blocks)
+	CLOSE //`CLOSE` (quit program)
+	INVALID //used internally
+	NOP //no-op (eg: `_ = funcWithReturn()` or `(a > 0) ? { _ } : { print "a is smol" }`)
+  EOF
+
+	IF TokType = TERN
+)
+
 func (t *Tok) ToString() string {
 	return t.typ.String() + " " + t.lexeme + " " + t.literal
 }
@@ -46,6 +95,7 @@ func (t TokType) String() string {
 	 case WHILE:        return "WHILE" 
 	 case ESC:          return "ESC"
 	 case EOF:          return "EOF" 
+	 case CLOSE:         return "CLOSE"
 	 case INVALID:      return "INVALID"
 	}
 	return "unknown token"
