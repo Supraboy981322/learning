@@ -45,5 +45,5 @@
           packages = [ zig ]; # this language too
         };
       }
-    );
+    ));
 }
