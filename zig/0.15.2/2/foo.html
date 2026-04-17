@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>//tmpNote - view</title>
+    <style>
+::selection {
+  color: #d8dee9;
+  background-color: #bf616a;
+}
+
+:root {
+  height: 100%;
+  background-color: #2e3440;
+  transition: background-color 0ms !important;
+}
+
+* {
+  opacity: 1;
+  cursor: default;
+  transition: all 250ms;
+}
+
+:root, body {
+  margin: 0;
+  padding: 0;
+  color: #d8dee9;
+  font-family: monospace;
+  &:has(.collapsed) {
+    overflow: hidden;
+  }
+  &> div {
+    &.collapsed * {
+      opacity: 0;
+      width: 0 !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      top: 50%;
+      position: absolute;
+      align-content: center;
+      transform: translateY(-50%);
+      box-sizing: border-box !important;
+    }
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
+    &:not(.collapsed){
+      height: fit-content;
+    }
+    p { text-align: center; }
+  }
+}
+
+
+button:not([disabled]) { cursor: pointer; } 
+
+h1 {
+  &> .server_name {
+    color: #ff5454;
+    font-style: italic;
+  }
+  &> .separator { color: #697da3; }
+  &> .page { color: #d8dee9; }
+}
+h1, .resText {
+  text-align: center;
+  &> button {
+    border: none;
+    outline: none;
+    font-weight: bold;
+    padding: 0.5em 1em;
+    margin-bottom: 1em;
+    border-radius: 1em;
+    background-color: #d8dee9;
+    &:hover:not([disabled]) {
+      color: #d8dee9;
+      background-color: #4c5a73;
+    }
+  }
+  &> .id { text-align: center; }
+}
+
+#note {
+  width: 80vw;
+  height: 50vw;
+  padding: 2em;
+  outline: none;
+  color: #d8dee9;
+  display: block;
+  font-size: 1.25em;
+  border-radius: 1em;
+  margin-bottom: 1em;
+  overflow: scroll;
+  font-family: monospace;
+  box-sizing: border-box;
+  background-color: #2e3440;
+  cursor: text;
+}
+
+textarea#note { border: solid #d8dee9 0.25em; }
+pre#note { border: solid #697da3 0.25em; }
+
+#id {
+  display: block;
+  color: #2e3440;
+  font-weight: bold;
+  box-sizing: border-box;
+  background-color: #697da3;
+  font-size: 2ch;
+  padding: 1em;
+  border-radius: 1em;
+  width: 80vw;
+  text-align: center;
+  cursor: pointer;
+  &.send {
+    cursor: pointer;
+    text-align: center;
+  }
+  &::selection {
+    color: #2e3440 !important;
+    background-color: #d8dee9 !important;
+  }
+  &:hover {
+    color: #d8dee9;
+    box-shadow: inset 0 0 0 0.25em #697da3;
+    font-size: 1.25em;
+    background-color: transparent;
+  }
+  margin-bottom: 1em;
+}
+.note_page_btn {
+  text-align:center;
+  outline: none;
+  border: none;
+  display: block;
+  color: #2e3440;
+  font-weight: bold;
+  box-sizing: border-box;
+  background-color: #697da3;
+  font-size: 2ch;
+  padding: 1em;
+  border-radius: 1em;
+  width: 80vw;
+  cursor: pointer;
+  &::selection {
+    color: #2e3440 !important;
+    background-color: #697da3 !important;
+  }
+  &:hover {
+    padding: 0.005;
+    background-color: #88c0d0;
+    font-size: 1.05em;
+    margin: -0.25em auto;
+    &::selection {
+      background-color: #d8dee9 !important;
+    }
+  }
+  margin-bottom: 1em;
+}
+
+#js_warn { color: red; }
+
+.clipboard_copy {
+  font-size: 1.1em !important;
+  background-color: #d8dee9 !important;
+  color: black !important;
+}
+
+.below_is_id {
+  padding: 0em;
+  margin: 0em;
+  margin-bottom: 1em;
+  font-size: 1.75em;
+  font-style: italic;
+}
+
+#file {
+  margin-bottom: 1em;
+  display: flex;
+  justify-content: space-around;
+  height: fit-content;
+  &> div {
+    flex: 1;
+    height: 25vw;
+    padding: 1rem;
+    margin: 1em;
+    border-radius: 1em;
+    text-align: center;
+    background-color: #4c566a;
+  }
+  &>.left_pane {
+    .dl_btn {
+      border-radius: 0.3em;
+      padding: 0.2em 0.5em;
+      outline: none;
+      border: none;
+    }
+    &>.fi_typ > code, &>.fi_size > code {
+      margin-left: 0.5em;
+      padding: 0.25em;
+      border-radius: 0.25em;
+      background-color: #2e3440;
+      border: solid 0.1em #8b93a3;
+    }
+  }
+  &>.right_pane {
+    h3 {
+      height: 10%;
+      margin: 0;
+      padding: 0;
+    }
+    .preview {
+      margin: 0;
+      text-align: left;
+      padding: 1em;
+      box-sizing: border-box;
+      display: block;
+      background-color: #2e3440;
+      width: 100%;
+      height: 90%;
+      border-radius: 0.7em;
+    }
+  }
+}
+
+#warning_container { 
+  display: flex;
+  align-items: center;
+  height: 100%;
+  &> div {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .continue {
+    color: #2e3440;
+    padding: 0.2em 0.5em;
+    font-size: 1.75em;
+    border-radius: 0.5em;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    background-color: #81a1c1;
+    &:hover {
+      background-color: #88c0d0;
+      font-size: 1.85em;
+      margin: -0.05em auto;
+    }
+  }
+}
+</style>
+
+    <script type="application/json" id="note_info">{
+ "note_size": 3,
+ "is_file": false,
+ "file_type": "text/plain",
+ "prev": "foo",
+ "note_id": "eegko1PBpDCcb4fF",
+ "class": "text"
+}
+</script>
+  </head>
+  <body>
+    <h3 id="js_warn">Without JavaScript, this site doesn't work.</h3>
+    <div class="collapsed">
+      <h1>
+        <span class="server_name">//tmpNote</span>
+        <span class="separator">-</span> 
+        <span class="page"> view</span>
+      </h1>
+      <p><i>note deleted</i></p>
+      <pre id="note">foo</pre>
+      <button class="note_page_btn" onclick="new_from_view();">new note</button>
+    </div>
+  </body>
+  <script async>
+"use strict";
+
+//set later
+var note_info = undefined; //may use for more than rendering the page 
+
+//setup the page
+(async function() {
+  //remove "enable JavaScript" warning
+  document.getElementById("js_warn").remove();
+  setTimeout(() => {
+    document.querySelector(".collapsed").removeAttribute("class");
+  }, -1);
+
+  //if the '#note_info' element exists, it's a file 
+  const note_info_elm = document.getElementById("note_info");
+  if (note_info_elm != null) {
+    //(it's JSON')
+    note_info = JSON.parse(note_info_elm.innerText);
+    if (note_info.is_file) {
+      //setup for file page
+      const file_elm = document.getElementById("file");
+
+      //warn if image
+      if (note_info.class == "Picture") {
+        //container so the child elements are centered vertically
+        let warning_container = document.createElement("div");
+        warning_container.setAttribute("id", "warning_container");
+        warning_container.setAttribute("class", "full-screen");
+
+        //another container so the child elements the
+        //  'display: block;' attribute actually does something 
+        let warning = document.createElement("div");
+        warning_container.appendChild(warning);
+
+        //warning text
+        let txt = document.createElement("p");
+        txt.setAttribute("class", "text");
+        txt.innerText = "this note is a picture, once viewed, it will be deleted." 
+        warning.appendChild(txt);
+        
+        //continue button
+        let continue_btn = document.createElement("div");
+        continue_btn.setAttribute("class", "continue");
+        continue_btn.setAttribute("onclick", "view_image");
+        continue_btn.innerText = "continue";
+        warning.appendChild(continue_btn);
+        
+        file_elm.appendChild(warning_container);
+      } else {
+        //left pane
+        var left = document.createElement("div");
+        left.setAttribute("class", "left_pane");
+        {
+          //download button
+          var dl_btn = document.createElement("button");
+          dl_btn.setAttribute("onclick", "dl_file(this);");
+          dl_btn.setAttribute("class", "dl_btn");
+          dl_btn.innerText = "download";
+          left.appendChild(dl_btn);
+
+          //note file size element
+          var fi_size_cont = document.createElement("p");
+          fi_size_cont.setAttribute("class", "fi_size");
+          fi_size_cont.innerText = "note size:";
+          //nest value in '<code>' element 
+          var fi_size = document.createElement("code");
+          fi_size.innerText = `${note_info.note_size} bytes`;
+          fi_size_cont.appendChild(fi_size);
+          left.appendChild(fi_size_cont);
+          
+          //note file type 
+          var fi_typ = document.createElement("p");
+          fi_typ.setAttribute("class", "fi_typ");
+          fi_typ.innerText = "file type:";
+          //nest value in '<code>' element 
+          var file_type_elm = document.createElement("code");
+          file_type_elm.setAttribute("class", "file_type");
+          file_type_elm.innerText = note_info.file_type;
+          fi_typ.appendChild(file_type_elm);
+          left.appendChild(fi_typ);
+        }
+
+        //right pane
+        var right = document.createElement("div");
+        right.setAttribute("class", "right_pane");
+        {
+          //preview pane title
+          var preview_title = document.createElement("h3");
+          preview_title.innerText = "preview";
+          right.appendChild(preview_title);
+
+          //file preview
+          var preview_text = document.createElement("pre");
+          preview_text.setAttribute("class", "preview");
+          const p_R = note_info.prev;
+          preview_text.innerText = (p_R == null) ? "couldn't generate preview" : p_R;
+          right.appendChild(preview_text);
+        }
+
+        //add the panes to the document
+        file_elm.appendChild(left);
+        file_elm.appendChild(right);
+      }
+    }
+  }
+})(); 
+  
+//switches to new_note page
+function new_from_view() {
+  let url = `${window.location.origin}/new`;
+  window.location.replace(url);
+}
+
+//switches to view_note page when "remove now" button pressed 
+function view_from_new(elm) {
+  //get the id from the element
+  let id = elm.getAttribute("note_id");
+  //replace the page with the view_note page for the current id
+  let url = `${window.location.origin}/view?id=${id}`;
+  window.location.replace(url);
+}
+
+//copy the note's url to clipboard when id element is clicked 
+async function copy_id(elm) {
+  //save the current class
+  let old_class = elm.getAttribute("class");
+  //add 'clipboard_copy' to the id element class for new styling
+  elm.setAttribute("class", `${old_class}, clipboard_copy`);
+  let id = elm.innerText; //get the id
+  try { //copy to clipboard
+    await navigator.clipboard.writeText(id);
+  } catch (e) { alert(`couldn't copy to clipboard\n\t${e}`); }
+  //wait 100ms then revert to the old styling by switching back class
+  setTimeout(() => {
+    elm.setAttribute("class", old_class);
+  }, 100);
+}
+
+//only executed on new_note page
+async function newNote() {
+  //api url 
+  let url = `${window.location.origin}/api/new`;
+  //note content
+  let n = document.getElementById("note").value;
+  //make a POST request to server
+  let resp = await fetch(url, {
+    method: 'POST',
+    //ask for errs in HTML 
+    headers: {
+      'err-html': 'true',
+    },
+    body: n //use note as body
+  });
+  if (!resp.ok) {
+    //the response will contain an HTML err page
+    const bod = await resp.text();
+    //replace the entire DOM with the err HTML page
+    document.open("text/html", "replace");
+    document.write(bod); //still 100% supported, and perfectly suits this use-case
+    document.close();
+    //throw err once done
+    throw new Error(`err, stat: ${resp.status}\n`);
+  }
+  //get the id
+  let id = await resp.text();
+  //get the id element
+  let idElm = document.querySelector(".note_page_btn");
+  //change the id for the '#id' css attributes 
+  idElm.setAttribute("id", "id");
+  //put the id in the element
+  idElm.innerText = `${id}`;
+  //change the class so css treats it as a different element
+  idElm.setAttribute("class", "id");
+  //make it copy to clipboard instead of executing this fn again 
+  idElm.setAttribute("onclick", "copy_id(this);");
+  //remove the note '<textarea>' element
+  document.getElementById("note").remove();
+  //unhide all the id view elements
+  let resView = document.querySelectorAll(".resText");
+  for (var i = 0; i < resView.length; i++) {
+    //alias for the '<button>'
+    const btn = resView[i].querySelector("button")
+    //only attempt to modify '<button>' if it exists
+    if (btn != null) { btn.setAttribute("note_id", id); }
+    //unhide element
+    resView[i].removeAttribute("hidden");
+  }
+}
+
+function dl_file(caller) {
+  //the stupid "dance" (as they say) that must be done
+  //  to download a file programmatically in JS
+  const elm = document.createElement("a");
+  const link = `${window.location.origin}/api/view?id=${note_info.note_id}`;
+  elm.href = link;
+  elm.setAttribute("download", "TODO_download_with_filename");
+  elm.style.display = "none";
+  document.body.appendChild(elm);
+  elm.click();
+  document.body.removeChild(elm);
+
+  //let user know that it's now deleted
+  const fi_elm = document.getElementById("file");
+  const p = document.createElement("p");
+  const i = document.createElement("i");
+  i.innerText = "note deleted";
+  p.appendChild(i);
+  fi_elm.before(p);
+
+  //disable the download button
+  caller.setAttribute("disabled", "");
+}
+</script>
+
+</html>
