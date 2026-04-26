@@ -16,8 +16,53 @@ pub const Chat = struct {
     alloc:std.mem.Allocator,
     mutex:std.Io.Mutex = .init,
 
-    pub fn init(alloc:std.mem.Allocator) !Chat {
-        return .{ .alloc = alloc };
+    pub fn init(io:std.Io, alloc:std.mem.Allocator) !Chat {
+        var res:Chat = .{ .alloc = alloc };
+        errdefer res.deinit(io) catch unreachable;
+        var file = std.Io.Dir.cwd().openFile(
+            io, "chat.log", .{ .mode = .read_only }
+        ) catch |e| switch (e) {
+            error.FileNotFound => {
+                (try std.Io.Dir.cwd().createFile(
+                    io, "chat.log", .{ .read = true}
+                )).close(io);
+                return res;
+            },
+            else => return e,
+        };
+        defer file.close(io);
+        var buf:[1024]u8 = undefined;
+        var useless_reader = file.reader(io, &buf);
+        var reader = &useless_reader.interface;
+        _ = reader.peekByte() catch |e|
+            return
+                if (e != error.EndOfStream)
+                    e
+                else
+                    res;
+        while (true) {
+            var b = reader.takeByte() catch break;
+            var name_len:usize = 0;
+            while (true) : ({ b = reader.takeByte() catch break; }) {
+                if (b == 241) break; 
+                name_len += @intCast(b);
+            }
+            const name = try reader.take(name_len);
+            std.debug.print("name |{s}| ({x})\n", .{name, name});
+            var msg_len:usize = 0;
+            b = reader.takeByte() catch break;
+            while (true) : ({ b = reader.takeByte() catch break; }) {
+                if (b == 241) break; 
+                msg_len += @intCast(b);
+            }
+            const msg = try reader.take(msg_len);
+            std.debug.print("msg |{s}| ({x})\n", .{msg, msg});
+            try res.messages.append(res.alloc, .init(
+                try res.alloc.dupe(u8, name),
+                try res.alloc.dupe(u8, msg)
+            ));
+        }
+        return res;
     }
 
     pub fn deinit(self:*Chat, io:std.Io) !void {
@@ -33,11 +78,41 @@ pub const Chat = struct {
     pub fn append(self:*Chat, io:std.Io, name:[]u8, msg:[]u8) !void {
         try self.mutex.lock(io);
         defer self.mutex.unlock(io);
+        std.debug.print("|{s}| just said {s}\n", .{name, msg});
         try self.messages.append(self.alloc, .init(
             try self.alloc.dupe(u8, name),
             try self.alloc.dupe(u8, msg)
         ));
-        std.debug.print("|{s}| just said {s}\n", .{name, msg});
+        var file = try std.Io.Dir.cwd().openFile(io, "chat.log", .{ .mode = .write_only });
+        defer file.close(io);
+        var buf:[1024]u8 = undefined;
+        var useless_writer = file.writer(io, &buf);
+        const size = (try file.stat(io)).size;
+        if (size > 0)
+            try useless_writer.seekTo(size);
+        var wr = &useless_writer.interface;
+        {
+            var i:usize = name.len;
+            while (i > 240) : (i -= 240)
+                try wr.writeByte(240);
+            if (i > 0)
+                try wr.writeByte(@intCast(i));
+            try wr.writeByte(241);
+            try wr.flush();
+            try wr.writeAll(name);
+            try wr.flush();
+        }
+        {
+            var i:usize = msg.len;
+            while (i > 240) : (i -= 240)
+                try wr.writeByte(240);
+            if (i > 0)
+                try wr.writeByte(@intCast(i));
+            try wr.writeByte(241);
+            try wr.flush();
+            try wr.writeAll(msg);
+            try wr.flush();
+        }
     }
 
     pub fn poll(self:*Chat, io:std.Io, have:usize) !?[]Msg {
@@ -63,7 +138,7 @@ pub fn main(init:std.process.Init) !void {
     var group:std.Io.Group = .init;
     defer group.cancel(io);
 
-    var chat:Chat = try .init(threaded.allocator);
+    var chat:Chat = try .init(io, threaded.allocator);
     defer chat.deinit(io) catch chat.messages.deinit(chat.alloc);
 
     while (true) {
