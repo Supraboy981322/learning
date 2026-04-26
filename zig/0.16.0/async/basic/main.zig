@@ -242,7 +242,6 @@ pub fn new_connection(
             name:[]u8,
         ) !void {
             const alloc = arena.allocator();
-            _ = alloc;
             var quit:bool = false;
             while (!quit) {
                 defer _ = arena.reset(.free_all);
@@ -255,7 +254,7 @@ pub fn new_connection(
                     continue; // TODO: proper disconnection
                 }
                 re.toss(1);
-                const msg = @constCast(std.mem.trim(u8, buf, &std.ascii.whitespace));
+                var msg = @constCast(std.mem.trim(u8, buf, &std.ascii.whitespace));
                 blk: {
                     const cmd = std.meta.stringToEnum(
                         enum{ EXIT }, msg 
@@ -264,6 +263,48 @@ pub fn new_connection(
                         .EXIT => quit = true,
                     }
                     continue;
+                }
+                {
+                    var i:usize = 0;
+                    var mem:std.ArrayList(u8) = .empty;
+                    var esc:bool = false;
+                    while (i < msg.len) : (i += 1) {
+                        if (esc) {
+                            defer esc = false;
+                            try mem.append(alloc, switch (msg[i]) {
+                                'x' => {
+                                    if (msg[i..].len > 3) {
+                                        if (std.mem.eql(u8, "x1b", msg[i..i+3])) {
+                                            try mem.append(alloc, '\x1b');
+                                            i += 2;
+                                            continue;
+                                        } else std.debug.print(
+                                            "not match: |{s}| ({x})",
+                                            .{msg[i..i+3], msg[i..i+3]}
+                                        );
+                                    }
+                                    try mem.appendSlice(alloc, "\\x");
+                                    continue;
+                                },
+                                'r' => '\r',
+                                't' => '\t',
+                                'b' => std.ascii.control_code.bs,
+                                'v' => std.ascii.control_code.vt,
+                                'a' => std.ascii.control_code.bel,
+                                else => {
+                                    try mem.appendSlice(alloc, &[_]u8{ '\\', msg[i] });
+                                    continue;
+                                },
+                            });
+                            continue;
+                        }
+                        switch (msg[i]) {
+                            '\\' => esc = true,
+                            else => try mem.append(alloc, msg[i]),
+                        }
+                    }
+                    alloc.free(msg);
+                    msg = try mem.toOwnedSlice(alloc);
                 }
                 try chat.append(io, name, msg);
             }
