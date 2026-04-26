@@ -153,34 +153,37 @@ pub fn connection_shim(
     alloc:std.mem.Allocator,
     chat:*Chat
 ) !void {
-    defer stream.close(io);
+    var closed:bool = false;
+    defer if (!closed) stream.close(io);
 
     var arena = std.heap.ArenaAllocator.init(alloc);
     defer _ = arena.deinit();
 
     std.debug.print("connection\n", .{});
-    new_connection(stream, io, arena.allocator(), chat) catch |e| {
+    closed = new_connection(stream, io, arena.allocator(), chat) catch |e| {
         std.debug.print("{t}\n", .{e});
         return error.Canceled;
     };
 }
 
 pub fn new_connection(
-    stream:std.Io.net.Stream,
+    stream_outer:std.Io.net.Stream,
     io_outer:std.Io,
     life_time_alloc:std.mem.Allocator,
     chat_outer:*Chat
-) !void {
+) !bool {
+    var closed:bool = false;
+
     var arena_alloc:std.heap.ArenaAllocator = .init(life_time_alloc);
     defer _ = arena_alloc.deinit();
     const allocator = arena_alloc.allocator();
 
     var wr_buf:[1_024]u8 = undefined;
-    var useless_writer = stream.writer(io_outer, &wr_buf);
+    var useless_writer = stream_outer.writer(io_outer, &wr_buf);
     var writer = &useless_writer.interface;
 
     var re_buf:[1_024]u8 = undefined;
-    var useless_reader = stream.reader(io_outer, &re_buf);
+    var useless_reader = stream_outer.reader(io_outer, &re_buf);
     var reader = &useless_reader.interface;
 
     try writer.print("welcome\r\n", .{});
@@ -234,7 +237,7 @@ pub fn new_connection(
                 .n => {
                     try writer.print("\nsorry, but I need a name; goodbye\n", .{});
                     try writer.flush();
-                    return;
+                    return false;
                 },
             }
         }
@@ -264,13 +267,13 @@ pub fn new_connection(
                 &std.ascii.whitespace
             ));
         }
-        return;
+        return false;
     };
     defer {
         std.debug.print("{s} just disconnected", .{name_outer});
         life_time_alloc.free(name_outer);
         writer.print("goodbye...\r\n\r\n", .{}) catch {};
-        writer.flush() catch {};
+        if (!closed) writer.flush() catch {};
     }
     std.debug.print("|{s}| ({x}) just logged in\n", .{name_outer, name_outer});
 
@@ -279,20 +282,23 @@ pub fn new_connection(
             io:std.Io,
             wr:*std.Io.Writer,
             chat:*Chat,
+            stopped:*bool,
         ) !void {
-            poller(io, wr, chat) catch
+            poller(io, wr, chat, stopped) catch
                 return error.Canceled;
         }
         pub fn poller(
             io:std.Io,
             wr:*std.Io.Writer,
             chat:*Chat,
+            stopped:*bool,
         ) !void {
             var last_seen:usize = 0;
             while (true) {
+                if (stopped.*) return;
                 if (chat.poll(io, last_seen) catch null) |new| for (new) |msg| {
-                    wr.print("\r\x1b[2K|{s}|: {s}\r\n", .{msg.name, msg.msg}) catch {};
-                    wr.flush() catch {};
+                    try wr.print("\r\x1b[2K|{s}|: {s}\r\n", .{msg.name, msg.msg});
+                    try wr.flush();
                     last_seen += 1;
                 };
             }
@@ -304,8 +310,10 @@ pub fn new_connection(
             arena:*std.heap.ArenaAllocator,
             chat:*Chat,
             name:[]u8,
+            stream:std.Io.net.Stream,
+            stopped:*bool,
         ) !void {
-            @This().main(io, wr, re, arena, chat, name) catch
+            @This().main(io, wr, re, arena, chat, name, stream, stopped) catch
                 return error.Canceled;
         }
         pub fn main(
@@ -315,11 +323,18 @@ pub fn new_connection(
             arena:*std.heap.ArenaAllocator,
             chat:*Chat,
             name:[]u8,
+            stream:std.Io.net.Stream,
+            stopped:*bool,
         ) !void {
+            defer {
+                wr.print("\n\ngoodbye...\r\n", .{}) catch {};
+                stream.close(io);
+                stopped.* = true;
+            }
             const alloc = arena.allocator();
-            var quit:bool = false;
-            while (!quit) {
+            while (true) {
                 defer _ = arena.reset(.free_all);
+                wr.flush() catch return;
                 const buf = re.takeDelimiterExclusive('\n') catch |e| switch (e) {
                     error.EndOfStream => continue,
                     else => return e,
@@ -335,7 +350,7 @@ pub fn new_connection(
                         enum{ EXIT }, msg 
                     ) orelse break :blk;
                     switch (cmd) {
-                        .EXIT => quit = true,
+                        .EXIT => return,
                     }
                     continue;
                 }
@@ -387,10 +402,11 @@ pub fn new_connection(
     };
     var group:std.Io.Group = .init;
     group.async(io_outer, chat_loop.poller_shim, .{
-        io_outer, writer, chat_outer
+        io_outer, writer, chat_outer, &closed,
     });
     group.async(io_outer, chat_loop.main_shim, .{
-        io_outer, writer, reader, &arena_alloc, chat_outer, name_outer
+        io_outer, writer, reader, &arena_alloc, chat_outer, name_outer, stream_outer, &closed
     });
     try group.await(io_outer);
+    return closed;
 }
