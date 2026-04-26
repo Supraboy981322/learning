@@ -381,6 +381,7 @@ pub fn new_connection(
                                 'b' => std.ascii.control_code.bs,
                                 'v' => std.ascii.control_code.vt,
                                 'a' => std.ascii.control_code.bel,
+                                'e' => std.ascii.control_code.esc,
                                 else => {
                                     try mem.appendSlice(alloc, &[_]u8{ '\\', msg[i] });
                                     continue;
